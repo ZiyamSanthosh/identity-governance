@@ -20,20 +20,18 @@ package org.wso2.carbon.identity.idle.account.identification.dao.impl;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.context.CarbonContext;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.idle.account.identification.constants.IdleAccIdentificationConstants;
 import org.wso2.carbon.identity.idle.account.identification.dao.IdleAccIdentificationDAO;
 import org.wso2.carbon.identity.idle.account.identification.exception.IdleAccIdentificationException;
 import org.wso2.carbon.identity.idle.account.identification.exception.IdleAccIdentificationServerException;
-import org.wso2.carbon.identity.idle.account.identification.internal.IdleAccountIdentificationDataHolder;
 import org.wso2.carbon.identity.idle.account.identification.models.InactiveUserModel;
 import org.wso2.carbon.identity.idle.account.identification.util.Utils;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserCoreConstants;
+import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 
 import java.sql.Connection;
@@ -53,28 +51,10 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
     public List<InactiveUserModel> getInactiveUsers(String inactiveAfter, String excludeBefore, String tenantDomain)
             throws IdleAccIdentificationException {
 
-        RealmService realmService = IdleAccountIdentificationDataHolder.getInstance().getRealmService();
-
-//        TODO: retrieve correct realm service
-//        RealmService realmService1 = UserCoreUtil.getRealmService();
-//
-//        PrivilegedCarbonContext.startTenantFlow();
-//        PrivilegedCarbonContext privilegedCarbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
-//        privilegedCarbonContext.setTenantId(IdentityTenantUtil.getTenantId(tenantDomain));
-//        privilegedCarbonContext.setTenantDomain(tenantDomain);
-//
-//        UserStoreManager userStoreManager;
-//        try {
-//            userStoreManager = (UserStoreManager) CarbonContext.getThreadLocalCarbonContext().
-//                    getUserRealm().getUserStoreManager();
-//        } catch (UserStoreException e) {
-//            throw new RuntimeException(e);
-//        }
-
         if (StringUtils.isEmpty(excludeBefore)) {
-            return getInactiveUsersFromSpecificDate(inactiveAfter, tenantDomain, realmService);
+            return getInactiveUsersFromSpecificDate(inactiveAfter, tenantDomain);
         } else {
-            return getLimitedInactiveUsersFromSpecificDate(inactiveAfter, excludeBefore, tenantDomain, realmService);
+            return getLimitedInactiveUsersFromSpecificDate(inactiveAfter, excludeBefore, tenantDomain);
         }
     }
 
@@ -82,12 +62,12 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
      * Get inactive users from a specific date.
      *
      * @param inactiveAfter date after which the user should be inactive.
-     * @param tenantDomain tenant domain.
-     * @return list of inactive users.
+     * @param tenantDomain  tenant domain.
+     * @return              list of inactive users.
      * @throws IdleAccIdentificationException Exception when retrieving inactive users from database.
      */
-    private List<InactiveUserModel> getInactiveUsersFromSpecificDate(String inactiveAfter, String tenantDomain,
-                                                                     RealmService realmService) throws IdleAccIdentificationException {
+    private List<InactiveUserModel> getInactiveUsersFromSpecificDate(String inactiveAfter, String tenantDomain)
+            throws IdleAccIdentificationException {
 
         String sqlStmt = IdleAccIdentificationConstants.SQLConstants.GET_INACTIVE_USERS_FROM_SPECIFIC_DATE;
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
@@ -102,13 +82,7 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
                     while (resultSet.next()) {
                         String username = resultSet.getString(1);
                         if (StringUtils.isNotBlank(username)) {
-//                            inactiveUsers.add(username);
-//                            inactiveUsers.add(fetchUserEmail(tenantId, realmService, username));
-                            InactiveUserModel user = new InactiveUserModel();
-                            user.setUsername(username);
-                            user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
-                            user.setEmail(fetchUserEmail(tenantId, realmService, username));
-                            inactiveUsers.add(user);
+                            inactiveUsers.add(buildInactiveUser(username));
                         }
                     }
                 }
@@ -128,12 +102,12 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
      *
      * @param inactiveAfter date after which the user should be inactive.
      * @param excludeBefore date before which the user should be excluded.
-     * @param tenantDomain tenant domain.
-     * @return list of inactive users.
+     * @param tenantDomain  tenant domain.
+     * @return              list of inactive users.
      * @throws IdleAccIdentificationException Exception when retrieving inactive users from database.
      */
-    private List<InactiveUserModel> getLimitedInactiveUsersFromSpecificDate(String inactiveAfter, String excludeBefore,
-                                                                            String tenantDomain, RealmService realmService) throws IdleAccIdentificationException {
+    private List<InactiveUserModel> getLimitedInactiveUsersFromSpecificDate(String inactiveAfter,
+                                String excludeBefore, String tenantDomain) throws IdleAccIdentificationException {
 
         String sqlStmt = IdleAccIdentificationConstants.SQLConstants.GET_LIMITED_INACTIVE_USERS_FROM_SPECIFIC_DATE;
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
@@ -150,12 +124,7 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
                     while (resultSet.next()) {
                         String username = resultSet.getString(1);
                         if (StringUtils.isNotBlank(username)) {
-                            // inactiveUsers.add(username);
-                            InactiveUserModel user = new InactiveUserModel();
-                            user.setUsername(username);
-                            user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
-                            user.setEmail(fetchUserEmail(tenantId, realmService, username));
-                            inactiveUsers.add(user);
+                            inactiveUsers.add(buildInactiveUser(username));
                         }
                     }
                 }
@@ -171,20 +140,32 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
     }
 
     /**
+     * Build an inactive user object.
+     * @param username      username of the user.
+     * @return              InactiveUserModel object.
+     * @throws IdleAccIdentificationServerException Exception when building inactive user object.
+     */
+    private InactiveUserModel buildInactiveUser(String username) throws IdleAccIdentificationServerException {
+
+        InactiveUserModel user = new InactiveUserModel();
+        user.setUsername(username);
+        user.setUserStoreDomain(UserCoreUtil.extractDomainFromName(username));
+        user.setEmail(fetchUserEmail(username));
+        return user;
+    }
+
+    /**
      * Fetch email address attribute value of a user.
      *
-     * @param tenantId      Tenant Id.
-     * @param realmService  Realm Service.
      * @param username      username of the user.
      * @return              Email address of the user.
      */
-    private String fetchUserEmail(int tenantId, RealmService realmService, String username) {
+    private String fetchUserEmail(String username) throws IdleAccIdentificationServerException {
 
         String[] claims = new String[1];
         claims[0] = IdleAccIdentificationConstants.EMAIL_CLAIM;
         try {
-            UserStoreManager userStoreManager = (UserStoreManager) realmService.getTenantUserRealm(tenantId).
-                    getUserStoreManager();
+            UserStoreManager userStoreManager = getUserStoreManager();
             String userStoreDomain = userStoreManager.getRealmConfiguration().getUserStoreProperty(
                     UserCoreConstants.RealmConfig.PROPERTY_DOMAIN_NAME);
 
@@ -198,8 +179,39 @@ public class IdleAccIdentificationDAOImpl implements IdleAccIdentificationDAO {
             }
 
         } catch (UserStoreException e) {
-            throw new RuntimeException(e);
+            throw new IdleAccIdentificationServerException(
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_ATTRIBUTES.getCode(),
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_ATTRIBUTES.getMessage());
         }
-        return username;
+        return null;
+    }
+
+    /**
+     * Get user store manager.
+     *
+     * @return UserStoreManager.
+     * @throws IdleAccIdentificationServerException Exception when getting user store manager.
+     */
+    private UserStoreManager getUserStoreManager() throws IdleAccIdentificationServerException {
+
+        try {
+            UserRealm realm = (UserRealm) CarbonContext.getThreadLocalCarbonContext().getUserRealm();
+            if (realm != null && realm.getUserStoreManager()
+                    .getSecondaryUserStoreManager(IdleAccIdentificationConstants.DEFAULT_USER_STORE_NAME) != null) {
+                return realm.getUserStoreManager().getSecondaryUserStoreManager(
+                        IdleAccIdentificationConstants.DEFAULT_USER_STORE_NAME);
+            } else if (realm != null) {
+                return realm.getUserStoreManager();
+            } else {
+                throw new IdleAccIdentificationServerException(
+                        IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getCode(),
+                        IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getMessage());
+            }
+
+        } catch (UserStoreException e) {
+            throw new IdleAccIdentificationServerException(
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getCode(),
+                    IdleAccIdentificationConstants.ErrorMessages.ERROR_RETRIEVE_USER_STORE_MANAGER.getMessage());
+        }
     }
 }

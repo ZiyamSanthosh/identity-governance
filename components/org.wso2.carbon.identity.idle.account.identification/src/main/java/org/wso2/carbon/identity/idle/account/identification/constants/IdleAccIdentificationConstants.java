@@ -30,6 +30,7 @@ public class IdleAccIdentificationConstants {
     public static final String DATE_INACTIVE_AFTER = "inactiveAfter";
     public static final String DATE_EXCLUDE_BEFORE = "excludeBefore";
     public static final String DATE_FORMAT_REGEX = "^\\d{4}-\\d{2}-\\d{2}$";
+    public static final String DEFAULT_USER_STORE_NAME = "DEFAULT";
 
     /**
      * Class containing SQL queries.
@@ -71,7 +72,16 @@ public class IdleAccIdentificationConstants {
 
         ERROR_RETRIEVE_INACTIVE_USERS_FROM_DB("65002",
                 "Error while retrieving inactive users from database.",
-                "Error while retrieving inactive users for organization: %s.");
+                "Error while retrieving inactive users for organization: %s."),
+
+        ERROR_RETRIEVE_USER_STORE_MANAGER("65003",
+                "Error while retrieving user store manager.",
+                "Error while retrieving user store manager of user in organization: %s."),
+
+
+        ERROR_RETRIEVE_USER_ATTRIBUTES("65004",
+                "Error while retrieving values of user attributes.",
+                "Error while retrieving values of user attributes from organization: %s.");
 
 
         private final String code;

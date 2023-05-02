@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~ Copyright (c) 2023, WSO2 LLC. (http://www.wso2.org)\
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -29,14 +29,6 @@
     <name>WSO2 Carbon - Idle Account Identification Management</name>
 
     <dependencies>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.framework</groupId>
-            <artifactId>org.wso2.carbon.identity.event</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.identity.governance</groupId>
-            <artifactId>org.wso2.carbon.identity.governance</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.mgt</artifactId>
